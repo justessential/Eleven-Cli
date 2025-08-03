@@ -19,7 +19,12 @@ async function handleCode(prompt, options = {}) {
       }
       
       originalFile = options.file;
-      originalContent = fs.readFileSync(options.file, 'utf8');
+      try {
+        originalContent = fs.readFileSync(options.file, 'utf8');
+      } catch (error) {
+        console.error(chalk.red(`Error reading file: ${error.message}`));
+        return;
+      }
       
       if (options.fix || options.rewrite || options.modify) {
         // Mode for modifying existing files
@@ -88,7 +93,6 @@ async function handleCode(prompt, options = {}) {
     }
   } catch (error) {
     console.error(chalk.red(`Error: ${error.message}`));
-    process.exit(1);
   }
 }
 
@@ -132,13 +136,22 @@ async function handleFileModification(filePath, originalContent, response, codeB
   
   if (confirm) {
     // Create backup
-    const backupPath = `${filePath}.backup.${Date.now()}`;
-    fs.writeFileSync(backupPath, originalContent);
-    console.log(chalk.gray(`📋 Backup created: ${backupPath}`));
+    try {
+      const backupPath = `${filePath}.backup.${Date.now()}`;
+      fs.writeFileSync(backupPath, originalContent);
+      console.log(chalk.gray(`📋 Backup created: ${backupPath}`));
+    } catch (error) {
+      console.log(chalk.yellow(`⚠️  Could not create backup: ${error.message}`));
+    }
     
     // Write new content
-    fs.writeFileSync(filePath, newContent);
-    console.log(chalk.green(`✅ File updated: ${filePath}`));
+    try {
+      fs.writeFileSync(filePath, newContent);
+      console.log(chalk.green(`✅ File updated: ${filePath}`));
+    } catch (error) {
+      console.error(chalk.red(`❌ Error writing file: ${error.message}`));
+      return;
+    }
     
     // Offer to show the changes
     const { showChanges } = await inquirer.prompt([
@@ -216,12 +229,16 @@ async function handleFileCreation(outputPath, response, codeBlocks) {
   if (confirm) {
     // Ensure directory exists
     const dir = path.dirname(outputPath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
+    try {
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      
+      fs.writeFileSync(outputPath, content);
+      console.log(chalk.green(`✅ File created: ${outputPath}`));
+    } catch (error) {
+      console.error(chalk.red(`❌ Error creating file: ${error.message}`));
     }
-    
-    fs.writeFileSync(outputPath, content);
-    console.log(chalk.green(`✅ File created: ${outputPath}`));
   }
 }
 

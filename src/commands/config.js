@@ -67,6 +67,7 @@ async function handleConfig(options = {}) {
       }
       return;
     }
+
     // Interactive configuration
     console.log(chalk.green("🔧 Eleven CLI Configuration"));
     console.log(chalk.gray("Let's set up your Gemini API key for Eleven.\n"));

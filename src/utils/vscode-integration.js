@@ -25,19 +25,27 @@ class VSCodeIntegration {
       status: 'pending'
     };
     
-    fs.writeFileSync(commandFile, JSON.stringify(commandData, null, 2));
-    return commandFile;
+    try {
+      fs.writeFileSync(commandFile, JSON.stringify(commandData, null, 2));
+      return commandFile;
+    } catch (error) {
+      throw new Error(`Failed to create command file: ${error.message}`);
+    }
   }
 
   // Update command status
   updateCommandStatus(status, result = null) {
     const commandFile = path.join(this.tempDir, 'command.json');
-    if (fs.existsSync(commandFile)) {
-      const commandData = JSON.parse(fs.readFileSync(commandFile, 'utf8'));
-      commandData.status = status;
-      commandData.result = result;
-      commandData.completedAt = Date.now();
-      fs.writeFileSync(commandFile, JSON.stringify(commandData, null, 2));
+    try {
+      if (fs.existsSync(commandFile)) {
+        const commandData = JSON.parse(fs.readFileSync(commandFile, 'utf8'));
+        commandData.status = status;
+        commandData.result = result;
+        commandData.completedAt = Date.now();
+        fs.writeFileSync(commandFile, JSON.stringify(commandData, null, 2));
+      }
+    } catch (error) {
+      console.error(`Error updating command status: ${error.message}`);
     }
   }
 
@@ -71,15 +79,19 @@ class VSCodeIntegration {
       throw new Error('VS Code not found in PATH');
     }
 
-    const tempFile = path.join(this.tempDir, `modified_${path.basename(originalFile)}`);
-    fs.writeFileSync(tempFile, modifiedContent);
+    try {
+      const tempFile = path.join(this.tempDir, `modified_${path.basename(originalFile)}`);
+      fs.writeFileSync(tempFile, modifiedContent);
 
-    return new Promise((resolve, reject) => {
-      exec(`code --diff "${originalFile}" "${tempFile}"`, (error) => {
-        if (error) reject(error);
-        else resolve(tempFile);
+      return new Promise((resolve, reject) => {
+        exec(`code --diff "${originalFile}" "${tempFile}"`, (error) => {
+          if (error) reject(error);
+          else resolve(tempFile);
+        });
       });
-    });
+    } catch (error) {
+      throw new Error(`Failed to create diff view: ${error.message}`);
+    }
   }
 
   // Generate VS Code settings for Eleven integration
@@ -146,33 +158,37 @@ class VSCodeIntegration {
 
   // Setup VS Code workspace for Eleven
   async setupWorkspace(workspacePath) {
-    const vscodeDir = path.join(workspacePath, '.vscode');
-    
-    if (!fs.existsSync(vscodeDir)) {
-      fs.mkdirSync(vscodeDir, { recursive: true });
+    try {
+      const vscodeDir = path.join(workspacePath, '.vscode');
+      
+      if (!fs.existsSync(vscodeDir)) {
+        fs.mkdirSync(vscodeDir, { recursive: true });
+      }
+
+      const { settings, tasks } = this.generateVSCodeSettings();
+
+      // Write settings
+      const settingsPath = path.join(vscodeDir, 'settings.json');
+      if (fs.existsSync(settingsPath)) {
+        const existingSettings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+        Object.assign(existingSettings, settings);
+        fs.writeFileSync(settingsPath, JSON.stringify(existingSettings, null, 2));
+      } else {
+        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+      }
+
+      // Write tasks
+      const tasksPath = path.join(vscodeDir, 'tasks.json');
+      fs.writeFileSync(tasksPath, JSON.stringify(tasks, null, 2));
+
+      console.log(chalk.green('✅ VS Code workspace configured for Eleven!'));
+      console.log(chalk.gray('Available tasks:'));
+      console.log(chalk.gray('  • Ctrl+Shift+P → "Tasks: Run Task" → "Eleven: Fix Current File"'));
+      console.log(chalk.gray('  • Ctrl+Shift+P → "Tasks: Run Task" → "Eleven: Rewrite Current File"'));
+      console.log(chalk.gray('  • Ctrl+Shift+P → "Tasks: Run Task" → "Eleven: Analyze Current File"'));
+    } catch (error) {
+      throw new Error(`Failed to setup VS Code workspace: ${error.message}`);
     }
-
-    const { settings, tasks } = this.generateVSCodeSettings();
-
-    // Write settings
-    const settingsPath = path.join(vscodeDir, 'settings.json');
-    if (fs.existsSync(settingsPath)) {
-      const existingSettings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
-      Object.assign(existingSettings, settings);
-      fs.writeFileSync(settingsPath, JSON.stringify(existingSettings, null, 2));
-    } else {
-      fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
-    }
-
-    // Write tasks
-    const tasksPath = path.join(vscodeDir, 'tasks.json');
-    fs.writeFileSync(tasksPath, JSON.stringify(tasks, null, 2));
-
-    console.log(chalk.green('✅ VS Code workspace configured for Eleven!'));
-    console.log(chalk.gray('Available tasks:'));
-    console.log(chalk.gray('  • Ctrl+Shift+P → "Tasks: Run Task" → "Eleven: Fix Current File"'));
-    console.log(chalk.gray('  • Ctrl+Shift+P → "Tasks: Run Task" → "Eleven: Rewrite Current File"'));
-    console.log(chalk.gray('  • Ctrl+Shift+P → "Tasks: Run Task" → "Eleven: Analyze Current File"'));
   }
 
   // Generate keybindings for VS Code

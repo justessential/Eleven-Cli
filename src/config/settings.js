@@ -20,10 +20,20 @@ class Settings {
     try {
       if (fs.existsSync(CONFIG_FILE)) {
         const config = JSON.parse(fs.readFileSync(CONFIG_FILE, "utf8"));
-        return config;
+        // Ensure all required properties exist
+        return {
+          apiKey: null,
+          apiKeys: [],
+          useRotation: false,
+          currentKeyIndex: 0,
+          model: "gemini-1.5-flash",
+          maxTokens: 8192,
+          temperature: 0.7,
+          ...config
+        };
       }
     } catch (error) {
-      console.error("Error getting config:", error);
+      console.error("Error reading config file:", error.message);
     }
 
     return {
@@ -38,11 +48,15 @@ class Settings {
   }
 
   setConfig(newConfig) {
-    const currentConfig = this.getConfig();
-    const updatedConfig = { ...currentConfig, ...newConfig };
+    try {
+      const currentConfig = this.getConfig();
+      const updatedConfig = { ...currentConfig, ...newConfig };
 
-    fs.writeFileSync(CONFIG_FILE, JSON.stringify(updatedConfig, null, 2));
-    return updatedConfig;
+      fs.writeFileSync(CONFIG_FILE, JSON.stringify(updatedConfig, null, 2));
+      return updatedConfig;
+    } catch (error) {
+      throw new Error(`Failed to save configuration: ${error.message}`);
+    }
   }
 
   getApiKey() {
@@ -57,10 +71,17 @@ class Settings {
   }
 
   setApiKey(apiKey) {
+    if (!apiKey || typeof apiKey !== 'string' || apiKey.trim() === '') {
+      throw new Error('API key cannot be empty');
+    }
     return this.setConfig({ apiKey });
   }
 
   addApiKey(apiKey) {
+    if (!apiKey || typeof apiKey !== 'string' || apiKey.trim() === '') {
+      throw new Error('API key cannot be empty');
+    }
+
     const config = this.getConfig();
     const apiKeys = config.apiKeys || [];
 

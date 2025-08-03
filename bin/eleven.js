@@ -5,6 +5,7 @@ const { handleChat } = require('../src/commands/chat');
 const { handleConfig } = require('../src/commands/config');
 const { handleCode } = require('../src/commands/code');
 const { handlePresets } = require('../src/commands/presets');
+const { handleVSCode } = require('../src/commands/vscode');
 const { showWelcome } = require('../src/utils/welcome');
 const chalk = require('chalk');
 
@@ -61,12 +62,25 @@ program
 program
   .command('rewrite')
   .description('Completely rewrite a code file')
-  .argument '<file>', 'File to rewrite')
+  .argument('<file>', 'File to rewrite')
   .argument('[requirements]', 'Requirements for the rewrite')
   .action(async (file, requirements) => {
     showWelcome();
     const prompt = requirements || 'rewrite this code with best practices and improvements';
     await handleCode(prompt, { file, rewrite: true });
+  });
+
+program
+  .command('vscode')
+  .description('VS Code integration setup and management')
+  .option('--setup', 'Setup VS Code integration')
+  .option('--check', 'Check VS Code availability')
+  .option('--path <path>', 'Workspace path for setup')
+  .option('--diff', 'Show diff view')
+  .option('-f, --file <file>', 'File for diff view')
+  .action((options) => {
+    showWelcome();
+    handleVSCode(options);
   });
 
 program
@@ -126,6 +140,7 @@ program.on('command:*', function (operands) {
   console.log(chalk.gray('  el rewrite <file> [requirements] - Rewrite a file'));
   console.log(chalk.gray('  el code -f <file> --fix         - Fix file interactively'));
   console.log(chalk.gray('  el code -o <file> "prompt"      - Generate code to file'));
+  console.log(chalk.gray('  el vscode --setup               - Setup VS Code integration'));
   process.exit(1);
 });
 
@@ -136,6 +151,7 @@ if (process.argv.length <= 2) {
   console.log(chalk.gray('  • File modification: el fix myfile.js'));
   console.log(chalk.gray('  • Code rewriting: el rewrite myfile.js'));
   console.log(chalk.gray('  • Output to file: el code -o newfile.js "create a function"'));
+  console.log(chalk.gray('  • VS Code integration: el vscode --setup'));
   console.log('');
   program.help();
 }

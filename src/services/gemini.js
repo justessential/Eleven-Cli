@@ -146,6 +146,10 @@ class GeminiService {
   }
 
   async generateResponse(prompt = {}) {
+    if (!prompt || (typeof prompt === 'string' && prompt.trim() === '')) {
+      throw new Error('Prompt cannot be empty');
+    }
+
     if (!this.model) {
       this.initialize();
     }
@@ -178,6 +182,14 @@ class GeminiService {
   }
 
   async generateStreamResponse(prompt, onChunk) {
+    if (!prompt || (typeof prompt === 'string' && prompt.trim() === '')) {
+      throw new Error('Prompt cannot be empty');
+    }
+
+    if (typeof onChunk !== 'function') {
+      throw new Error('onChunk must be a function');
+    }
+
     if (!this.model) {
       this.initialize();
     }

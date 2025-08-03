@@ -11,7 +11,10 @@
     "start": "node bin/eleven.js",
     "install-global": "npm link",
     "uninstall-global": "npm unlink -g",
-    "test": "node bin/eleven.js --help"
+    "test": "node bin/eleven.js --help",
+    "dev": "node bin/eleven.js",
+    "build": "echo 'No build step required for CLI'",
+    "lint": "echo 'Add linting if needed'"
   },
   "dependencies": {
     "@google/generative-ai": "^0.15.0",
@@ -20,19 +23,23 @@
     "inquirer": "^8.2.6",
     "ora": "^5.4.1"
   },
+  "devDependencies": {},
   "keywords": [
     "ai",
     "cli",
     "assistant",
     "gemini",
     "personal-assistant",
-    "slythnox"
+    "slythnox",
+    "code-generation",
+    "automation"
   ],
   "author": "Slythnox",
   "license": "MIT",
   "engines": {
     "node": ">=16.0.0"
   },
+  "preferGlobal": true,
   "repository": {
     "type": "git",
     "url": "git+https://github.com/slythnox/eleven-cli.git"

@@ -1,6 +1,28 @@
-const { program } = require('commander');
+#!/usr/bin/env node
 
-// Main entry point (not used directly, but good to have)
+const { program } = require('commander');
+const { showWelcome } = require('./utils/welcome');
+
+// Main entry point for the CLI
+function main() {
+  try {
+    showWelcome();
+    
+    // Import and run the main CLI program
+    require('../bin/eleven.js');
+  } catch (error) {
+    console.error('Error starting Eleven CLI:', error.message);
+    process.exit(1);
+  }
+}
+
+// Export for potential programmatic use
 module.exports = {
-  program
+  program,
+  main
 };
+
+// Run if called directly
+if (require.main === module) {
+  main();
+}
